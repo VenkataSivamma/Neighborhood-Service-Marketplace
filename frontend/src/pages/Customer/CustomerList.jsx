@@ -115,8 +115,10 @@ export default function CustomerList() {
                   {paginated.length === 0 ? (
                     <tr><td colSpan={6}><div className="empty-state"><div className="empty-icon">👥</div><p>No customers found</p></div></td></tr>
                   ) : (
-                    paginated.map((c, i) => (
-                      <tr key={c.id}>
+                    paginated.map((c, i) => {
+                      const cid = c.customerId || c.id;
+                      return (
+                      <tr key={cid}>
                         <td>{(page - 1) * PAGE_SIZE + i + 1}</td>
                         <td><strong>{c.fullName || c.name || "—"}</strong></td>
                         <td>{c.email || "—"}</td>
@@ -125,11 +127,12 @@ export default function CustomerList() {
                         <td>
                           <div style={{ display: "flex", gap: 6 }}>
                             <button className="btn btn-info btn-sm" onClick={() => { setEditItem(c); setShowForm(true); }}>Edit</button>
-                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(c.id)}>Delete</button>
+                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(cid)}>Delete</button>
                           </div>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

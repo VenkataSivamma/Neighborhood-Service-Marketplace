@@ -5,11 +5,15 @@ import Loader from "../../components/Loader";
 import SearchBar from "../../components/SearchBar";
 import Pagination from "../../components/Pagination";
 import Toast from "../../components/Toast";
+import { useAuth } from "../../context/AuthContext";
 import "../../styles/table.css";
 
 const PAGE_SIZE = 8;
 
 export default function ReviewList() {
+  const { user } = useAuth();
+  const role = (user?.role || "").toUpperCase();
+  const uid = user?.id ?? user?.customerId ?? user?.providerId ?? null;
   const [reviews, setReviews] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [customerFilter, setCustomerFilter] = useState("");
@@ -23,7 +27,10 @@ export default function ReviewList() {
   const load = async () => {
     try {
       setLoading(true);
-      const res = await getAllReviews();
+      let res;
+      if (role === "CUSTOMER" && uid) res = await getReviewsByCustomer(uid);
+      else if (role === "PROVIDER" && uid) res = await getReviewsByProvider(uid);
+      else res = await getAllReviews();
       const data = Array.isArray(res.data) ? res.data : [];
       setReviews(data); setFiltered(data);
     } catch { setError("Failed to load reviews."); }
@@ -78,13 +85,17 @@ export default function ReviewList() {
 
       <div className="table-container">
         <div className="table-header">
-          <h2>All Reviews ({filtered.length})</h2>
+          <h2>{role === "CUSTOMER" ? "My Reviews" : role === "PROVIDER" ? "Reviews About Me" : "All Reviews"} ({filtered.length})</h2>
           <div className="table-actions">
-            <SearchBar value={customerFilter} onChange={setCustomerFilter} placeholder="Customer ID..." />
-            <button className="btn btn-info btn-sm" onClick={filterByCustomer}>Filter</button>
-            <SearchBar value={providerFilter} onChange={setProviderFilter} placeholder="Provider ID..." />
-            <button className="btn btn-info btn-sm" onClick={filterByProvider}>Filter</button>
-            <button className="btn btn-secondary btn-sm" onClick={() => { setCustomerFilter(""); setProviderFilter(""); load(); }}>Reset</button>
+            {role === "ADMIN" && (
+              <>
+                <SearchBar value={customerFilter} onChange={setCustomerFilter} placeholder="Customer ID..." />
+                <button className="btn btn-info btn-sm" onClick={filterByCustomer}>Filter</button>
+                <SearchBar value={providerFilter} onChange={setProviderFilter} placeholder="Provider ID..." />
+                <button className="btn btn-info btn-sm" onClick={filterByProvider}>Filter</button>
+                <button className="btn btn-secondary btn-sm" onClick={() => { setCustomerFilter(""); setProviderFilter(""); load(); }}>Reset</button>
+              </>
+            )}
           </div>
         </div>
 
@@ -107,8 +118,10 @@ export default function ReviewList() {
                   {paginated.length === 0 ? (
                     <tr><td colSpan={7}><div className="empty-state"><div className="empty-icon">⭐</div><p>No reviews found</p></div></td></tr>
                   ) : (
-                    paginated.map((r, i) => (
-                      <tr key={r.id}>
+                    paginated.map((r, i) => {
+                      const rid = r.reviewId || r.id;
+                      return (
+                      <tr key={rid}>
                         <td>{(page - 1) * PAGE_SIZE + i + 1}</td>
                         <td>{r.customerName || r.customerId || "—"}</td>
                         <td>{r.providerName || r.providerId || "—"}</td>
@@ -116,10 +129,13 @@ export default function ReviewList() {
                         <td style={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.comment || "—"}</td>
                         <td>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
                         <td>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(r.id)}>Delete</button>
+                          {role === "ADMIN" && (
+                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(rid)}>Delete</button>
+                          )}
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

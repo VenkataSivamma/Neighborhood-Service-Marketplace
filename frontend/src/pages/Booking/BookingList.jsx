@@ -16,7 +16,7 @@ const PAGE_SIZE = 8;
 export default function BookingList() {
   const { user } = useAuth();
   const role = (user?.role || "").toUpperCase();
-  const uid = user?.id ?? user?.customerId ?? user?.providerId ?? user?.userId ?? null;
+  const uid = user?.id || user?.customerId || user?.providerId || null;
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -44,7 +44,7 @@ export default function BookingList() {
 
   useEffect(() => {
     if (!role) return;
-    if ((role === "CUSTOMER" || role === "PROVIDER") && !uid) {
+    if ((role === "CUSTOMER" || role === "PROVIDER") && uid == null) {
       setError("User session missing ID. Please log out and log in again.");
       return;
     }
@@ -102,6 +102,9 @@ export default function BookingList() {
       <div className="table-container">
         <div className="table-header">
           <h2>{heading} ({bookings.length})</h2>
+          <div className="table-actions">
+            <button className="btn btn-secondary btn-sm" onClick={() => load(role, uid)}>🔄 Refresh</button>
+          </div>
         </div>
 
         {loading ? <Loader /> : (
@@ -130,8 +133,10 @@ export default function BookingList() {
                       </td>
                     </tr>
                   ) : (
-                    paginated.map((b, i) => (
-                      <tr key={b.id}>
+                    paginated.map((b, i) => {
+                      const bid = b.bookingId || b.id;
+                      return (
+                      <tr key={bid}>
                         <td>{(page - 1) * PAGE_SIZE + i + 1}</td>
                         {role !== "CUSTOMER" && <td>{b.customerName || b.customerId || "—"}</td>}
                         {role !== "PROVIDER" && <td>{b.providerName || b.providerId || "—"}</td>}
@@ -144,40 +149,36 @@ export default function BookingList() {
                         </td>
                         <td>
                           <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
-                            {/* PROVIDER: accept / reject pending requests */}
                             {role === "PROVIDER" && b.status === "PENDING" && (
                               <>
-                                <button className="btn btn-success btn-sm" onClick={() => doAction("Accepted", acceptBooking, b.id)}>Accept</button>
-                                <button className="btn btn-danger btn-sm" onClick={() => doAction("Rejected", rejectBooking, b.id)}>Reject</button>
+                                <button className="btn btn-success btn-sm" onClick={() => doAction("Accepted", acceptBooking, bid)}>Accept</button>
+                                <button className="btn btn-danger btn-sm" onClick={() => doAction("Rejected", rejectBooking, bid)}>Reject</button>
                               </>
                             )}
                             {role === "PROVIDER" && b.status === "ACCEPTED" && (
-                              <button className="btn btn-info btn-sm" onClick={() => doAction("In Progress", inProgressBooking, b.id)}>Start</button>
+                              <button className="btn btn-info btn-sm" onClick={() => doAction("In Progress", inProgressBooking, bid)}>Start</button>
                             )}
                             {role === "PROVIDER" && b.status === "IN_PROGRESS" && (
-                              <button className="btn btn-primary btn-sm" onClick={() => doAction("Completed", completeBooking, b.id)}>Complete</button>
+                              <button className="btn btn-primary btn-sm" onClick={() => doAction("Completed", completeBooking, bid)}>Complete</button>
                             )}
-
-                            {/* CUSTOMER: cancel pending bookings */}
                             {role === "CUSTOMER" && (b.status === "PENDING" || b.status === "ACCEPTED") && (
-                              <button className="btn btn-warning btn-sm" onClick={() => doAction("Cancelled", cancelBooking, b.id)}>Cancel</button>
+                              <button className="btn btn-warning btn-sm" onClick={() => doAction("Cancelled", cancelBooking, bid)}>Cancel</button>
                             )}
-
-                            {/* ADMIN: full controls */}
                             {role === "ADMIN" && (
                               <>
-                                <button className="btn btn-success btn-sm" onClick={() => doAction("Accepted", acceptBooking, b.id)}>Accept</button>
-                                <button className="btn btn-danger btn-sm" onClick={() => doAction("Rejected", rejectBooking, b.id)}>Reject</button>
-                                <button className="btn btn-info btn-sm" onClick={() => doAction("In Progress", inProgressBooking, b.id)}>In Progress</button>
-                                <button className="btn btn-primary btn-sm" onClick={() => doAction("Completed", completeBooking, b.id)}>Complete</button>
-                                <button className="btn btn-warning btn-sm" onClick={() => doAction("Cancelled", cancelBooking, b.id)}>Cancel</button>
-                                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(b.id)}>Delete</button>
+                                <button className="btn btn-success btn-sm" onClick={() => doAction("Accepted", acceptBooking, bid)}>Accept</button>
+                                <button className="btn btn-danger btn-sm" onClick={() => doAction("Rejected", rejectBooking, bid)}>Reject</button>
+                                <button className="btn btn-info btn-sm" onClick={() => doAction("In Progress", inProgressBooking, bid)}>In Progress</button>
+                                <button className="btn btn-primary btn-sm" onClick={() => doAction("Completed", completeBooking, bid)}>Complete</button>
+                                <button className="btn btn-warning btn-sm" onClick={() => doAction("Cancelled", cancelBooking, bid)}>Cancel</button>
+                                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(bid)}>Delete</button>
                               </>
                             )}
                           </div>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

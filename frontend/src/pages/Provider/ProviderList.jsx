@@ -141,8 +141,10 @@ export default function ProviderList() {
                   {paginated.length === 0 ? (
                     <tr><td colSpan={7}><div className="empty-state"><div className="empty-icon">🔧</div><p>No providers found</p></div></td></tr>
                   ) : (
-                    paginated.map((p, i) => (
-                      <tr key={p.id}>
+                    paginated.map((p, i) => {
+                      const pid = p.providerId || p.id;
+                      return (
+                      <tr key={pid}>
                         <td>{(page - 1) * PAGE_SIZE + i + 1}</td>
                         <td><strong>{p.fullName || p.name || p.businessName || "—"}</strong></td>
                         <td>{p.email || "—"}</td>
@@ -151,15 +153,16 @@ export default function ProviderList() {
                         <td><span className={`badge badge-${p.status?.toLowerCase()}`}>{p.status || "—"}</span></td>
                         <td>
                           <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                            <button className="btn btn-success btn-sm" onClick={() => doAction("Approve", approveProvider, p.id)}>Approve</button>
-                            <button className="btn btn-danger btn-sm" onClick={() => doAction("Reject", rejectProvider, p.id)}>Reject</button>
-                            <button className="btn btn-warning btn-sm" onClick={() => doAction("Suspend", suspendProvider, p.id)}>Suspend</button>
+                            <button className="btn btn-success btn-sm" onClick={() => doAction("Approve", approveProvider, pid)}>Approve</button>
+                            <button className="btn btn-danger btn-sm" onClick={() => doAction("Reject", rejectProvider, pid)}>Reject</button>
+                            <button className="btn btn-warning btn-sm" onClick={() => doAction("Suspend", suspendProvider, pid)}>Suspend</button>
                             <button className="btn btn-info btn-sm" onClick={() => { setEditItem(p); setShowForm(true); }}>Edit</button>
-                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(p.id)}>Delete</button>
+                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(pid)}>Delete</button>
                           </div>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

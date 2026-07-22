@@ -40,7 +40,7 @@ export default function ProviderForm({ editItem, onClose, onSuccess }) {
       const payload = { ...form };
       if (editItem && !payload.password) delete payload.password;
       editItem
-        ? await updateProvider(editItem.id, payload)
+        ? await updateProvider(editItem.providerId || editItem.id, payload)
         : await createProvider(payload);
       onSuccess();
     } catch (err) {
