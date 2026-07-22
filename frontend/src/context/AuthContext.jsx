@@ -20,7 +20,8 @@ export function AuthProvider({ children }) {
       }
       // Normalize role in case old session has "ROLE_CUSTOMER" etc.
       const rawRole = (parsed.role || "").toUpperCase();
-      if (rawRole.includes("PROVIDER")) parsed.role = "PROVIDER";
+      if (rawRole.includes("ADMIN")) parsed.role = "ADMIN";
+      else if (rawRole.includes("PROVIDER")) parsed.role = "PROVIDER";
       else if (rawRole.includes("CUSTOMER")) parsed.role = "CUSTOMER";
       return parsed;
     } catch {

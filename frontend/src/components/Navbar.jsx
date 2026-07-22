@@ -3,14 +3,22 @@ import { useAuth } from "../context/AuthContext";
 import "../styles/navbar.css";
 
 const titles = {
-  "/dashboard": "Dashboard",
-  "/categories": "Categories",
-  "/customers": "Customers",
-  "/providers": "Providers",
-  "/bookings": "Bookings",
-  "/reviews": "Reviews",
-  "/notifications": "Notifications",
-  "/reports": "Reports",
+  "/dashboard":        "Dashboard",
+  "/search-services":  "Search Services",
+  "/my-bookings":      "My Bookings",
+  "/my-reviews":       "My Reviews",
+  "/profile":          "My Profile",
+  "/booking-requests": "Booking Requests",
+  "/active-jobs":      "Active Jobs",
+  "/provider-reviews": "My Reviews",
+  "/provider-profile": "My Profile",
+  "/categories":       "Categories",
+  "/customers":        "Customers",
+  "/providers":        "Providers",
+  "/bookings":         "Bookings",
+  "/reviews":          "Reviews",
+  "/notifications":    "Notifications",
+  "/reports":          "Reports",
 };
 
 export default function Navbar({ onToggleSidebar }) {

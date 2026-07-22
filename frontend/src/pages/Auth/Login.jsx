@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginCustomer, loginProvider } from "../../services/authService";
-import { getAllCustomers } from "../../services/customerService";
-import { getAllProviders } from "../../services/providerService";
+import { loginCustomer, loginProvider, loginAdmin } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
 import "../../styles/auth.css";
 
@@ -10,7 +8,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const [role, setRole] = useState("CUSTOMER"); // CUSTOMER | PROVIDER
+  const [role, setRole] = useState("CUSTOMER"); // CUSTOMER | PROVIDER | ADMIN
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
@@ -37,42 +35,29 @@ export default function Login() {
     setSubmitting(true);
     setServerError("");
     try {
-      const res = role === "CUSTOMER"
+      const res = role === "ADMIN"
+        ? await loginAdmin({ email: form.email, password: form.password })
+        : role === "CUSTOMER"
         ? await loginCustomer({ email: form.email, password: form.password })
         : await loginProvider({ email: form.email, password: form.password });
 
       const data = res.data;
-
-      // Normalize role — use the tab the user selected as source of truth
-      // Backend may return "ROLE_CUSTOMER", "customer", null, etc.
-      const normalizedRole = role; // "CUSTOMER" or "PROVIDER" from the tab
-
-      const token = data.token || data.accessToken || data.jwtToken || "";
+      const token = data.token || "";
       const email = data.email || form.email;
+      const resolvedId = data.id ?? null;
 
-      // Backend doesn't return ID — fetch it by matching email from the list
-      let resolvedId = null;
-      try {
-        // Token must be in localStorage before the next API call fires
-        localStorage.setItem("auth_user", JSON.stringify({ token, role: normalizedRole, email }));
-        if (normalizedRole === "CUSTOMER") {
-          const listRes = await getAllCustomers();
-          const match = (listRes.data || []).find((c) => c.email === email);
-          resolvedId = match?.id ?? match?.customerId ?? null;
-        } else {
-          const listRes = await getAllProviders();
-          const match = (listRes.data || []).find((p) => p.email === email);
-          resolvedId = match?.id ?? match?.providerId ?? null;
-        }
-      } catch {
-        // If lookup fails, proceed without ID — pages will show appropriate errors
-      }
+      // Normalize role: backend returns "ROLE_CUSTOMER", strip prefix
+      const rawRole = (data.role || role).toUpperCase();
+      const normalizedRole = rawRole.includes("PROVIDER") ? "PROVIDER"
+        : rawRole.includes("CUSTOMER") ? "CUSTOMER"
+        : rawRole.includes("ADMIN") ? "ADMIN"
+        : role;
 
       login({
         id: resolvedId,
         token,
         email,
-        name: data.fullName || data.name || data.username || form.email,
+        name: data.fullName || data.name || email,
         role: normalizedRole,
       });
       navigate("/dashboard", { replace: true });
@@ -110,6 +95,13 @@ export default function Login() {
             >
               🔧 Provider
             </button>
+            <button
+              type="button"
+              className={`auth-tab ${role === "ADMIN" ? "active" : ""}`}
+              onClick={() => { setRole("ADMIN"); setServerError(""); setErrors({}); }}
+            >
+              🛡️ Admin
+            </button>
           </div>
 
           {serverError && (
@@ -127,7 +119,7 @@ export default function Login() {
                   type="email"
                   value={form.email}
                   onChange={set("email")}
-                  placeholder={role === "CUSTOMER" ? "john@gmail.com" : "ravi@gmail.com"}
+                  placeholder={role === "ADMIN" ? "admin@marketplace.com" : role === "CUSTOMER" ? "john@gmail.com" : "ravi@gmail.com"}
                   className={errors.email ? "input-error" : ""}
                   autoComplete="email"
                 />
@@ -160,7 +152,7 @@ export default function Login() {
             </div>
 
             <button type="submit" className="auth-submit-btn" disabled={submitting}>
-              {submitting ? "Signing in..." : `Sign In as ${role === "CUSTOMER" ? "Customer" : "Provider"}`}
+              {submitting ? "Signing in..." : `Sign In as ${role === "CUSTOMER" ? "Customer" : role === "PROVIDER" ? "Provider" : "Admin"}`}
             </button>
           </form>
 

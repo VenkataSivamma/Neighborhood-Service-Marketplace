@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getNotificationsByCustomer, getNotificationsByProvider, deleteNotification } from "../../services/notificationService";
+import { getNotificationsByCustomer, getNotificationsByProvider, getAllNotifications, deleteNotification } from "../../services/notificationService";
 import NotificationForm from "./NotificationForm";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import Loader from "../../components/Loader";
@@ -13,6 +13,7 @@ const PAGE_SIZE = 8;
 
 export default function NotificationList() {
   const { user } = useAuth();
+  const role = (user?.role || "").toUpperCase();
   const [notifications, setNotifications] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState("");
@@ -24,24 +25,20 @@ export default function NotificationList() {
   const [page, setPage] = useState(1);
 
   const load = async () => {
-    // Resolve the user id — stored as id, customerId, or providerId depending on backend response
     const uid = user?.id || user?.customerId || user?.providerId;
     const role = (user?.role || "").toUpperCase();
-
-    if (!uid) {
-      // No id in session — show empty state, do not hard-error
-      setNotifications([]);
-      setFiltered([]);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError("");
-      const res = role === "PROVIDER"
-        ? await getNotificationsByProvider(uid)
-        : await getNotificationsByCustomer(uid);
+      let res;
+      if (role === "ADMIN") res = await getAllNotifications();
+      else if (role === "PROVIDER") {
+        if (!uid) { setLoading(false); return; }
+        res = await getNotificationsByProvider(uid);
+      } else {
+        if (!uid) { setLoading(false); return; }
+        res = await getNotificationsByCustomer(uid);
+      }
       const data = Array.isArray(res.data) ? res.data : [];
       setNotifications(data);
       setFiltered(data);
@@ -90,12 +87,10 @@ export default function NotificationList() {
           <h2>My Notifications ({filtered.length})</h2>
           <div className="table-actions">
             <SearchBar value={search} onChange={setSearch} placeholder="Search message..." />
-            <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); load(); }}>
-              Refresh
-            </button>
-            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-              + Send Notification
-            </button>
+            <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); load(); }}>Refresh</button>
+            {role === "ADMIN" && (
+              <button className="btn btn-primary" onClick={() => setShowForm(true)}>+ Send Notification</button>
+            )}
           </div>
         </div>
 
@@ -123,8 +118,10 @@ export default function NotificationList() {
                       </td>
                     </tr>
                   ) : (
-                    paginated.map((n, i) => (
-                      <tr key={n.id}>
+                    paginated.map((n, i) => {
+                      const nid = n.notificationId || n.id;
+                      return (
+                      <tr key={nid}>
                         <td>{(page - 1) * PAGE_SIZE + i + 1}</td>
                         <td>{n.message || "—"}</td>
                         <td>
@@ -133,19 +130,15 @@ export default function NotificationList() {
                           </span>
                         </td>
                         <td>
-                          {n.createdAt
-                            ? new Date(n.createdAt).toLocaleString()
-                            : n.sentAt
-                            ? new Date(n.sentAt).toLocaleString()
-                            : "—"}
+                          {n.createdAt ? new Date(n.createdAt).toLocaleString()
+                            : n.sentAt ? new Date(n.sentAt).toLocaleString() : "—"}
                         </td>
                         <td>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(n.id)}>
-                            Delete
-                          </button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(nid)}>Delete</button>
                         </td>
                       </tr>
-                    ))
+                      );
+                    })
                   )}
                 </tbody>
               </table>

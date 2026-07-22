@@ -25,6 +25,7 @@ function CustomerDashboard({ uid }) {
   const { user } = useAuth();
 
   useEffect(() => {
+    if (!uid) { setLoading(false); return; }
     const fetch = async () => {
       const [bRes, rRes, nRes] = await Promise.allSettled([
         getBookingsByCustomer(uid),
@@ -159,6 +160,7 @@ function ProviderDashboard({ uid }) {
   const { user } = useAuth();
 
   useEffect(() => {
+    if (!uid) { setLoading(false); return; }
     const fetch = async () => {
       const [bRes, rRes, nRes] = await Promise.allSettled([
         getBookingsByProvider(uid),

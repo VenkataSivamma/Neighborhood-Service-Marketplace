@@ -29,7 +29,7 @@ export default function CategoryForm({ editItem, onClose, onSuccess }) {
     setServerError("");
     try {
       editItem
-        ? await updateCategory(editItem.id, form)
+        ? await updateCategory(editItem.categoryId || editItem.id, form)
         : await createCategory(form);
       onSuccess();
     } catch (err) {

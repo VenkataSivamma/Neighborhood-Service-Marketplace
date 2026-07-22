@@ -38,7 +38,7 @@ export default function CustomerForm({ editItem, onClose, onSuccess }) {
       const payload = { ...form };
       if (editItem && !payload.password) delete payload.password;
       editItem
-        ? await updateCustomer(editItem.id, payload)
+        ? await updateCustomer(editItem.customerId || editItem.id, payload)
         : await createCustomer(payload);
       onSuccess();
     } catch (err) {
