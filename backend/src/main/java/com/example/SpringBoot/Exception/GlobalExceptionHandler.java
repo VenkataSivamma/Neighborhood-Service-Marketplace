@@ -62,6 +62,15 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntime(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "message", ex.getMessage() != null ? ex.getMessage() : "An unexpected error occurred",
+                "status", HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "timestamp", LocalDateTime.now()
+        ));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         String errors = ex.getBindingResult().getFieldErrors().stream()

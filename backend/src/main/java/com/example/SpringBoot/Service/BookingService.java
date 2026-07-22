@@ -4,7 +4,6 @@ import com.example.SpringBoot.DTO.BookingDTO;
 import com.example.SpringBoot.Exception.BookingNotFoundException;
 import com.example.SpringBoot.Exception.CustomerNotFoundException;
 import com.example.SpringBoot.Exception.ProviderNotFoundException;
-import com.example.SpringBoot.Mapper.BookingMapper;
 import com.example.SpringBoot.Model.Booking;
 import com.example.SpringBoot.Model.Booking.BookingStatus;
 import com.example.SpringBoot.Model.Customer;
@@ -23,17 +22,19 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final CustomerRepository customerRepository;
     private final ProviderRepository providerRepository;
-    private final BookingMapper bookingMapper;
 
     public BookingService(BookingRepository bookingRepository, CustomerRepository customerRepository,
-                          ProviderRepository providerRepository, BookingMapper bookingMapper) {
+                          ProviderRepository providerRepository) {
         this.bookingRepository = bookingRepository;
         this.customerRepository = customerRepository;
         this.providerRepository = providerRepository;
-        this.bookingMapper = bookingMapper;
     }
 
     public BookingDTO createBooking(BookingDTO dto) {
+        if (dto.getCustomerId() == null || dto.getCustomerId() == 0)
+            throw new CustomerNotFoundException("Customer ID is missing in booking request");
+        if (dto.getProviderId() == null || dto.getProviderId() == 0)
+            throw new ProviderNotFoundException("Provider ID is missing in booking request");
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + dto.getCustomerId()));
         Provider provider = providerRepository.findById(dto.getProviderId())
@@ -44,22 +45,22 @@ public class BookingService {
         booking.setServiceDescription(dto.getServiceDescription());
         booking.setBookingDate(dto.getBookingDate());
         booking.setStatus(BookingStatus.PENDING);
-        return bookingMapper.toDTO(bookingRepository.save(booking));
+        return toDTO(bookingRepository.save(booking));
     }
 
     public BookingDTO getBookingById(long id) {
-        return bookingMapper.toDTO(findById(id));
+        return toDTO(findById(id));
     }
 
     public List<BookingDTO> getAllBookings() {
-        return bookingRepository.findAll().stream().map(bookingMapper::toDTO).collect(Collectors.toList());
+        return bookingRepository.findAll().stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     public BookingDTO updateBooking(long id, BookingDTO dto) {
         Booking booking = findById(id);
         booking.setServiceDescription(dto.getServiceDescription());
         booking.setBookingDate(dto.getBookingDate());
-        return bookingMapper.toDTO(bookingRepository.save(booking));
+        return toDTO(bookingRepository.save(booking));
     }
 
     public void deleteBooking(long id) {
@@ -69,13 +70,13 @@ public class BookingService {
     public List<BookingDTO> getBookingsByCustomer(long customerId) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found with id: " + customerId));
-        return bookingRepository.findByCustomer(customer).stream().map(bookingMapper::toDTO).collect(Collectors.toList());
+        return bookingRepository.findByCustomer(customer).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     public List<BookingDTO> getBookingsByProvider(long providerId) {
         Provider provider = providerRepository.findById(providerId)
                 .orElseThrow(() -> new ProviderNotFoundException("Provider not found with id: " + providerId));
-        return bookingRepository.findByProvider(provider).stream().map(bookingMapper::toDTO).collect(Collectors.toList());
+        return bookingRepository.findByProvider(provider).stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     public BookingDTO acceptBooking(long id) { return updateStatus(id, BookingStatus.ACCEPTED); }
@@ -87,7 +88,20 @@ public class BookingService {
     private BookingDTO updateStatus(long id, BookingStatus status) {
         Booking booking = findById(id);
         booking.setStatus(status);
-        return bookingMapper.toDTO(bookingRepository.save(booking));
+        return toDTO(bookingRepository.save(booking));
+    }
+
+    private BookingDTO toDTO(Booking b) {
+        BookingDTO dto = new BookingDTO();
+        dto.setBookingId(b.getBookingId());
+        dto.setCustomerId(b.getCustomer() != null ? b.getCustomer().getCustomerId() : null);
+        dto.setCustomerName(b.getCustomer() != null ? b.getCustomer().getFullName() : null);
+        dto.setProviderId(b.getProvider() != null ? b.getProvider().getProviderId() : null);
+        dto.setProviderName(b.getProvider() != null ? b.getProvider().getFullName() : null);
+        dto.setServiceDescription(b.getServiceDescription());
+        dto.setBookingDate(b.getBookingDate());
+        dto.setStatus(b.getStatus());
+        return dto;
     }
 
     private Booking findById(long id) {

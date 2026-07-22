@@ -42,6 +42,7 @@ public class ReviewService {
         review.setProvider(provider);
         review.setRating(dto.getRating());
         review.setComment(dto.getComment());
+        review.setCreatedAt(java.time.LocalDateTime.now());
         return reviewMapper.toDTO(reviewRepository.save(review));
     }
 

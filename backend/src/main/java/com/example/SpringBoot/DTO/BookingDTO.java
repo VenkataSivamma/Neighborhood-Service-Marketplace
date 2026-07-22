@@ -8,10 +8,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BookingDTO {
-    private long bookingId;
-    private long customerId;
-    private long providerId;
+    private Long bookingId;
+    private Long customerId;
+    private String customerName;
+    private Long providerId;
+    private String providerName;
     private String serviceDescription;
     private LocalDateTime bookingDate;
     private BookingStatus status;
+    private String paymentMethod;
 }
