@@ -1,0 +1,9 @@
+import api from "./axiosInstance";
+
+export const getAllCategories = () => api.get("/categories");
+export const getCategoryById = (id) => api.get(`/categories/${id}`);
+export const createCategory = (data) => api.post("/categories", data);
+export const updateCategory = (id, data) => api.put(`/categories/${id}`, data);
+export const deleteCategory = (id) => api.delete(`/categories/${id}`);
+export const enableCategory = (id) => api.put(`/categories/${id}/enable`);
+export const disableCategory = (id) => api.put(`/categories/${id}/disable`);
