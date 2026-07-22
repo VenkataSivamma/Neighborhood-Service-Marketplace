@@ -25,8 +25,15 @@ public class CustomUserDetailsService implements UserDetailsService {
         this.providerRepository = providerRepository;
     }
 
+    private static final String ADMIN_EMAIL = "admin@marketplace.com";
+
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        if (ADMIN_EMAIL.equalsIgnoreCase(email)) {
+            return new User(ADMIN_EMAIL, "",
+                    List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        }
+
         Optional<Customer> customer = customerRepository.findByEmail(email);
         if (customer.isPresent()) {
             return new User(customer.get().getEmail(), customer.get().getPassword(),

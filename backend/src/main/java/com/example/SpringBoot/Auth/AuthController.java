@@ -33,6 +33,11 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.registerProvider(request));
     }
 
+    @PostMapping("/admin/login")
+    public ResponseEntity<AuthResponse> loginAdmin(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.loginAdmin(request));
+    }
+
     @PostMapping("/provider/login")
     public ResponseEntity<AuthResponse> loginProvider(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.loginProvider(request));
