@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { BrowserRouter, useLocation } from "react-router-dom";
+// import { BrowserRouter, useLocation } from "react-router-dom";
+import { HashRouter } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
@@ -32,10 +33,15 @@ function Layout() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Layout />
-      </AuthProvider>
-    </BrowserRouter>
+    // <BrowserRouter>
+    //   <AuthProvider>
+    //     <Layout />
+    //   </AuthProvider>
+    // </BrowserRouter>
+    <HashRouter>
+  <AuthProvider>
+    <Layout />
+  </AuthProvider>
+</HashRouter>
   );
 }
